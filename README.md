@@ -1,8 +1,11 @@
 # elder-scripts-iv
-
 This is a personal collection of scripts and relative files or programs primarily used for a productive workflow.
 
-## Included Scripts:
+# Included Scripts:
+
+### dictation.sh
+- Utilizes Nerd Dictation for Speech-To-Text.
+- Currently bound to: `$mainMod CTRL, SPACE`.
 
 ### dictation.sh
 - Utilizes Nerd Dictation for Speech-To-Text.
@@ -20,3 +23,12 @@ This is a personal collection of scripts and relative files or programs primaril
 ### text_to_speech.sh
 - Pulls text from Hyprland with `wl-clipboard` then feeds into `aspeak` and Microsoft's Speech Services.
 - Currently bound to: `$mainMod, SPACE`.
+
+## AI Chatbot
+Includes Rust Websocket Server
+
+### explain_this.sh
+- Connects wia websocket to Ollama server and parses explaination from text found inside wayland clipboard response to aspeak Microsoft Speech Services
+
+### response.sh
+- Connects wia websocket to Ollama server and parses response from text inside wayland clipboard to aspeak Microsoft Speech Services

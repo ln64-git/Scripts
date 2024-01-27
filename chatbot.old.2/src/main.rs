@@ -16,19 +16,26 @@ async fn main() {
     let model = "llama2-uncensored";
     let prompt = format!("{} {}", custom_prompt, clipboard_text.to_string());
 
-    let ollama = Ollama::default();
-    let mut stream = ollama
+    let ollama_instance = Ollama::default();
+    let mut generation_stream = ollama_instance
         .generate_stream(GenerationRequest::new(model.to_string(), prompt))
         .await
         .unwrap();
-    while let Some(res) = futures::stream::StreamExt::next(&mut stream).await {
-        let res = res.unwrap();
-        println!("Response: {:?}", res); // Printing to console
+    
+    let mut sentence = String::new(); // Initialize an empty string to store the sentence
+    
+    while let Some(result) = futures::stream::StreamExt::next(&mut generation_stream).await {
+        let result = result.unwrap();
+        for generation_response in result {
+            let word = generation_response.response; // Trim leading/trailing whitespace
+            sentence.push_str(&word); // Append the word to the sentence
+            if word.ends_with('.') || word.ends_with('!') || word.ends_with('?') {
+                println!("{}", sentence);
+                sentence.clear();
+            }
+        }
     }
 }
-
-
-
 
 fn get_clipboard_text() -> Result<String, Box<dyn std::error::Error>> {
     let output = Command::new("wl-paste").output()?;

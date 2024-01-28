@@ -1,24 +1,16 @@
 // region: --- Modules
 use std::process::Command;
+
+use super::command::execute_command;
 // endregion: --- Modules
 
-
-pub fn speak(text: &str) -> Result<(), std::io::Error> {
-    println!("{}", text);
-    let output = Command::new("aspeak")
-        .arg("text")
-        .arg(format!("\"{}\"", text))
-        .output()?;
-    if output.status.success() {
-        Ok(())
-    } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Command execution failed",
-        ))
-    }
+pub fn speak(text: &str) -> () {
+    execute_command(
+        "aspeak",
+        &["text", &format!("\"{}\"", text)],
+        text.to_string(),
+    );
 }
-
 
 pub fn speak_clipboard() {
     if let Ok(output) = Command::new("wl-paste").output() {

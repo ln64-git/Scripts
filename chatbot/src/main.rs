@@ -10,18 +10,22 @@ use utils::{ollama, speak};
 
 #[tokio::main]
 async fn main() {
-    speak("Chatbot initialized.");
+    // speak("Chatbot initialized.");
     let model = "llama2-uncensored";
     let binding = "--help".to_string();
     let args: Vec<String> = env::args().collect();
     let primary_function = args.get(1).unwrap_or(&binding);
     match primary_function.as_str() {
         "--converse" => {
+            speak("Do you have something you'd like to say?");
             return;
         }
         "--pull_clipboard" => {
             let secondary_function = args.get(2).unwrap_or(&binding);
             match secondary_function.as_str() {
+                "--converse" => {
+                    speak("What is it?");
+                }
                 "--speak" => {
                     speak_clipboard();
                 }

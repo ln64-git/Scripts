@@ -11,32 +11,46 @@ use utils::{ollama, speak};
 #[tokio::main]
 async fn main() {
     speak("Chatbot initialized.");
-    let args: Vec<String> = env::args().collect();
     let model = "llama2-uncensored";
-    let primary_function = &args[1];
+    let binding = "--help".to_string();
+    let args: Vec<String> = env::args().collect();
+    let primary_function = args.get(1).unwrap_or(&binding);
     match primary_function.as_str() {
         "--converse" => {
             return;
         }
-        "--speak" => {
-            speak::speak_clipboard();
-        }
-        "--response" => {
-            let default_prompt_prelude = "Explain this...";
-            let prompt_prelude = args
-                .get(2)
-                .map(|s| s.as_str())
-                .unwrap_or(default_prompt_prelude);
-            let prompt_input = match clipboard::clipboard() {
-                Ok(text) => text,
-                Err(err) => {
-                    eprintln!("Error: Unable to paste text from the clipboard: {}", err);
+        "--pull_clipboard" => {
+            let secondary_function = args.get(2).unwrap_or(&binding);
+            match secondary_function.as_str() {
+                "--speak" => {
+                    speak_clipboard();
+                }
+                "--respond" => {
+                    let default_prompt_prelude = "Explain this...";
+                    let prompt_prelude = args
+                        .get(3)
+                        .map(|s| s.as_str())
+                        .unwrap_or(default_prompt_prelude);
+                    let prompt_input = match clipboard::clipboard() {
+                        Ok(text) => text,
+                        Err(err) => {
+                            eprintln!("Error: Unable to paste text from the clipboard: {}", err);
+                            return;
+                        }
+                    };
+                    let final_prompt = format!("{} {}", prompt_prelude, prompt_input);
+                    ollama::generate_text(model, final_prompt).await;
+                }
+                _ => {
                     return;
                 }
-            };
-            let final_prompt = format!("{} {}", prompt_prelude, prompt_input);
-            ollama::generate_text(model, final_prompt).await;
+            }
         }
-        &_ => return,
+        "--help" => {
+            println!("Usage: chatbot [--converse | --parse_clipboard [--speak_clipboard | --response] [prompt_prelude]]");
+        }
+        _ => {
+            return;
+        }
     }
 }

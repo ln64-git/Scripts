@@ -1,10 +1,16 @@
-use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
-use std::process::Command;
+#![allow(unused)]
+
+use crate::speak::speak;
+use utils::clipboard::clipboard;
+use utils::speak;
+use ollama_rs::Ollama;
+use ollama_rs::generation::completion::request::GenerationRequest;
+
+mod utils;
 
 #[tokio::main]
 async fn main() {
     speak("Please wait as I compose an explanation...");
-
     let args: Vec<String> = std::env::args().collect();
     let custom_prompt = if args.len() > 1 {
         args[1].clone()
@@ -12,7 +18,7 @@ async fn main() {
         "Briefly explain this...".to_string()
     };
 
-    let clipboard_text = match get_clipboard_text() {
+    let clipboard_text = match clipboard() {
         Ok(text) => text,
         Err(err) => {
             eprintln!("Error: Unable to paste text from the clipboard: {}", err);
@@ -39,7 +45,6 @@ async fn main() {
                 if !sentence_init {
                     sentence = sentence.chars().skip(1).collect();
                 }
-                // println!("{}", sentence);
                 speak(sentence.as_str());
                 sentence.clear();
                 sentence_init = false;
@@ -48,16 +53,3 @@ async fn main() {
     }
 }
 
-fn get_clipboard_text() -> Result<String, Box<dyn std::error::Error>> {
-    let output = Command::new("wl-paste").output()?;
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
-}
-
-fn speak(text: &str) {
-    println!("{}", text);
-    Command::new("aspeak")
-        .arg("text")
-        .arg(format!("\"{}\"", text)) // Enclose the text in double quotes
-        .output()
-        .expect("Failed to speak");
-}

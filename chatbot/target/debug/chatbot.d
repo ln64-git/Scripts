@@ -1,1 +1,1 @@
-/home/lucian/Documents/Scripts/chatbot.old.2/target/debug/chatbot: /home/lucian/Documents/Scripts/chatbot.old.2/src/main.rs
+/home/lucian/Documents/Scripts/chatbot/target/debug/chatbot: /home/lucian/Documents/Scripts/chatbot/src/main.rs /home/lucian/Documents/Scripts/chatbot/src/utils/clipboard.rs /home/lucian/Documents/Scripts/chatbot/src/utils/mod.rs /home/lucian/Documents/Scripts/chatbot/src/utils/ollama.rs /home/lucian/Documents/Scripts/chatbot/src/utils/speak.rs

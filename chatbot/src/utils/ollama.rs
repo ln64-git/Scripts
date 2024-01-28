@@ -1,24 +1,24 @@
-// generation.rs
-
+// region: --- Modules
 use crate::speak::speak;
 use ollama_rs::generation::completion::request::GenerationRequest;
 use ollama_rs::Ollama;
+// endregion: --- Modules
 
-pub async fn generate_text(model: &str, custom_prompt: String, clipboard_text: String) {
+pub async fn generate_text(model: &str, final_prompt: String) {
     let ollama_instance = Ollama::default();
     let mut generation_stream = ollama_instance
-        .generate_stream(GenerationRequest::new(model.to_string(), custom_prompt))
+        .generate_stream(GenerationRequest::new(model.to_string(), final_prompt))
         .await
         .unwrap();
 
-    let mut sentence = String::new(); // Initialize an empty string to store the sentence
+    let mut sentence = String::new();
     let mut sentence_init = true;
     while let Some(result) = futures::stream::StreamExt::next(&mut generation_stream).await {
         let result = result.unwrap();
         for generation_response in result {
-            let word = generation_response.response; // Trim leading/trailing whitespace
-            sentence.push_str(&word); // Append the word to the sentence
-            if word.ends_with('.') || word.ends_with('!') || word.ends_with('?') {
+            let fragment = generation_response.response;
+            sentence.push_str(&fragment);
+            if fragment.contains('.') || fragment.contains('!') || fragment.contains('?') {
                 if !sentence_init {
                     sentence = sentence.chars().skip(1).collect();
                 }

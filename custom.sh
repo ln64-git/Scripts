@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the path to the directory containing the Go file
-path="/home/ln64/Desktop/voxctl-go/cmd"
+path="/home/ln64/Source/voxctl-go/cmd"
 
 # Set the name of the Go file to be executed
 file="main.go"

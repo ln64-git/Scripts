@@ -1,0 +1,49 @@
+2024/05/24 02:41:59 voxctl.go:29: main - Program Started
+2024/05/24 02:41:59 voxctl.go:43: Failed to get configuration: error reading configuration: open /home/ln64/.config/voxctl/config.json: no such file or directory
+2024/05/24 02:42:05 voxctl.go:29: main - Program Started
+2024/05/24 02:42:05 voxctl.go:43: Failed to get configuration: error reading configuration: open /home/ln64/.config/voxctl/config.json: no such file or directory
+2024/05/24 15:17:32 voxctl.go:29: main - Program Started
+2024/05/24 15:17:32 server.go:20: Starting server on port 8080
+2024/05/24 15:21:44 voxctl.go:29: main - Program Started
+2024/05/24 15:21:44 voxctl.go:69: Server is already running on port 8080. Connecting to the existing server...
+2024/05/24 15:21:44 server.go:89: Connected to the server on port 8080.
+2024/05/24 15:21:44 server.go:96: Server response: 200 OK
+2024/05/24 15:21:44 voxctl.go:103: Input requested.
+2024/05/24 15:21:44 input.go:17: text: Hi clue
+2024/05/24 15:21:44 server.go:122: Received POST request to /play with text: Hi clue
+2024/05/24 15:21:44 server.go:48: Speech synthesized and added to the queue
+2024/05/24 15:21:44 voxctl.go:116: Input response: 200 OK
+2024/05/24 15:21:44 voxctl.go:76: Quit flag requested, Program Exiting
+2024/05/24 15:23:27 input.go:17: text: The blue whale is a marine mammal and a baleen whale. Reaching a maximum confirmed length of 29.9 meters and weighing up to 199 tonnes, it is the largest animal known ever to have existed. The blue whale's long and slender body can be of various shades of greyish-blue dorsally and somewhat lighter underneath
+2024/05/24 15:23:27 server.go:122: Received POST request to /play with text: The blue whale is a marine mammal and a baleen whale. Reaching a maximum confirmed length of 29.9 meters and weighing up to 199 tonnes, it is the largest animal known ever to have existed. The blue whale's long and slender body can be of various shades of greyish-blue dorsally and somewhat lighter underneath
+2024/05/24 15:23:29 server.go:48: Speech synthesized and added to the queue
+2024/05/24 15:27:22 voxctl.go:84: Program Exiting
+2024/05/24 15:37:56 voxctl.go:29: main - Program Started
+2024/05/24 15:37:56 server.go:20: Starting server on port 8080
+2024/05/24 15:43:09 voxctl.go:29: main - Program Started
+2024/05/24 15:43:09 server.go:20: Starting server on port 8080
+2024/05/24 16:50:32 input.go:17: text: something
+2024/05/24 16:50:32 server.go:122: Received POST request to /play with text: something
+2024/05/24 16:50:32 server.go:48: Speech synthesized and added to the queue
+2024/05/24 16:51:38 input.go:17: text: something
+2024/05/24 16:51:38 server.go:122: Received POST request to /play with text: something
+2024/05/24 16:51:38 server.go:48: Speech synthesized and added to the queue
+2024/05/24 18:17:34 input.go:17: text: something
+2024/05/24 18:17:34 server.go:122: Received POST request to /play with text: something
+2024/05/24 18:17:35 server.go:48: Speech synthesized and added to the queue
+2024/05/24 20:06:36 server.go:35: failed to decode request body: invalid character '\n' in string literal
+2024/05/24 20:07:38 voxctl.go:29: main - Program Started
+2024/05/24 20:07:38 voxctl.go:69: Server is already running on port 8080. Connecting to the existing server...
+2024/05/24 20:07:38 server.go:89: Connected to the server on port 8080.
+2024/05/24 20:07:38 server.go:96: Server response: 200 OK
+2024/05/24 20:07:38 voxctl.go:103: Input requested.
+2024/05/24 20:07:38 server.go:35: failed to decode request body: invalid character '$' after object key:value pair
+2024/05/24 20:07:38 voxctl.go:116: Input response: 400 Bad Request
+2024/05/24 20:07:38 voxctl.go:76: Quit flag requested, Program Exiting
+2024/05/24 20:07:42 voxctl.go:29: main - Program Started
+2024/05/24 20:07:42 voxctl.go:69: Server is already running on port 8080. Connecting to the existing server...
+2024/05/24 20:07:42 server.go:89: Connected to the server on port 8080.
+2024/05/24 20:07:42 server.go:96: Server response: 200 OK
+2024/05/24 20:07:42 voxctl.go:103: Input requested.
+2024/05/24 20:07:42 server.go:35: failed to decode request body: invalid character '$' after object key:value pair
+2024/05/24 20:07:42 voxctl.go:116: Input response: 400 Bad Request

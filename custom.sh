@@ -1,4 +1,4 @@
-#!/bin/bash
+cd#!/bin/bash
 
 # Set the path to the directory containing the Go file
 path="/home/ln64/Source/voxctl-go/cmd"

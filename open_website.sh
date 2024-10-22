@@ -6,5 +6,5 @@ if [ "$activeWindow" = '"firefox"' ]; then
   firefox --new-tab "$url"
 else
   echo "firefox is not the active window. Opening new window: $url"
-  firefox --new-window "$url" --kiosk
+  firefox --new-window "$url" 
 fi

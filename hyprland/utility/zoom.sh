@@ -1,12 +1,12 @@
 #!/bin/bash
 # smooth_cursor_zoom.sh
 # Parameters: $1 = "in" or "out"
-step=0.01      # Base step amount for zoom adjustment
-base_delay=0.00002  # Base delay between steps (in seconds)
-steps=60       # Increased number of steps for smoother animation
+step=0.1       # Increased step amount for faster zoom adjustment
+base_delay=0.000030  # Further reduced base delay between steps (in seconds)
+steps=10        # Reduced number of steps for faster animation
 min_zoom=1.0   # Minimum zoom factor
 max_zoom=10.0  # Maximum zoom factor
-acceleration=1.6  # Acceleration factor for zoom adjustment
+acceleration=1  # Acceleration factor for zoom adjustment
 lock_file="/tmp/zoom_animation.lock"
 
 # Function to clean up lock file on exit

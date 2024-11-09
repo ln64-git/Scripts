@@ -1,7 +1,15 @@
 #!/usr/bin/env sh
-app_name="$1"  # First argument is the application name (e.g., firefox, vesktop, code)
-shift          # Shift to remove the first argument, so we can capture any additional options
-extra_args="$@"  # Additional arguments (e.g., flags for the app)
+new_window=false
+
+# Check for the `-n` flag as the first parameter, indicating a new window should open
+if [ "$1" = "-n" ]; then
+    new_window=true
+    shift  # Remove `-n` from arguments
+fi
+
+app_name="$1"  # The application name (e.g., firefox, code)
+shift          # Remove the first argument so any additional options are captured
+extra_args="$@"  # Remaining arguments (e.g., flags for the app)
 
 # Define a temporary file to store the last focused window ID for cycling
 tmp_file="/tmp/${app_name}_last_window_id"
@@ -9,16 +17,26 @@ tmp_file="/tmp/${app_name}_last_window_id"
 # Set `app_class` to match the application name by default; override for specific applications
 case "$app_name" in
     code)
-        app_class="code-url-handler"  # Use the actual class name for VSCode
+        app_class="Code"  # Use the actual class name for VSCode as returned by hyprctl
         ;;
     *)
         app_class="$app_name"  # Default to the same name if no special mapping is needed
         ;;
 esac
 
+# If `-n` is set, skip the window focusing and open a new instance
+if [ "$new_window" = true ]; then
+    echo "Opening a new instance of $app_class with arguments: $extra_args"
+    "$app_name" $extra_args &
+    exit 0
+fi
+
 # Retrieve all open windows of the specified class, sorted by last activation time
 windows=$(hyprctl clients -j | jq -r --arg app_class "$app_class" \
-           '[.[] | select(.class == $app_class)] | sort_by(.at) | .[].address')
+           '[.[] | select(.class | test($app_class; "i"))] | sort_by(.at) | .[].address')
+
+# Debugging: Display windows found
+echo "Found windows for class $app_class: $windows"
 
 # Check if there are any open windows of the app
 if [ -n "$windows" ]; then
@@ -43,14 +61,21 @@ if [ -n "$windows" ]; then
         next_window_id=$(echo "$windows" | head -n 1)
     fi
 
+    # Debugging: Display next window to focus
+    echo "Next window to focus: $next_window_id"
+
     # Get the workspace ID for the next window
     workspace_id=$(hyprctl clients -j | jq -r --arg next_window_id "$next_window_id" \
                    '.[] | select(.address == $next_window_id) | .workspace["id"]')
 
     # Switch to the workspace and focus the selected window
     if [ -n "$workspace_id" ]; then
+        echo "Switching to workspace: $workspace_id"
         hyprctl dispatch workspace "$workspace_id"
+    else
+        echo "No workspace ID found; skipping workspace switch."
     fi
+
     hyprctl dispatch focuswindow "$next_window_id"
 
     # Save the focused window ID to the temporary file

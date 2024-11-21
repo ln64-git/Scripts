@@ -24,6 +24,12 @@ case "$app_name" in
         ;;
 esac
 
+case "$app_name" in
+    obs)
+        app_class="com.obsproject.Studio"  # Use the actual OBS class name
+        ;;
+esac
+
 # If `-n` is set, skip the window focusing and open a new instance
 if [ "$new_window" = true ]; then
     echo "Opening a new instance of $app_class with arguments: $extra_args"

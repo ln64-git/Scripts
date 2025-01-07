@@ -23,6 +23,16 @@ case "$app_name" in
         app_class="$app_name"  # Default to the same name if no special mapping is needed
         ;;
 esac
+case "$app_name" in
+    zen-browser)
+        app_class="zen-beta"  # Map zen-browser to zen-beta
+        ;;
+esac
+case "$app_name" in
+    bitwig-studio)
+        app_class="com.bitwig.BitwigStudi"  # Map zen-browser to zen-beta
+        ;;
+esac
 
 case "$app_name" in
     obs)

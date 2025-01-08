@@ -10,7 +10,7 @@ STATE_DIR="$XDG_STATE_HOME/ags"
 screenshot_path="/tmp/video_wallpaper_screenshot.jpg"
 
 # Dependencies Check
-for cmd in mpvpaper yt-dlp ffmpeg; do
+for cmd in mpvpaper yt-dlp ffmpeg wl-paste; do
     if ! command -v "$cmd" &> /dev/null; then
         echo "Error: $cmd is not installed. Please install it to continue."
         exit 1
@@ -18,7 +18,10 @@ for cmd in mpvpaper yt-dlp ffmpeg; do
 done
 
 # Get YouTube URL from clipboard
-youtube_url=$(wl-paste 2>/dev/null)
+youtube_url=$(wl-paste --no-newline 2>/dev/null)
+
+# Debug output to confirm URL
+echo "YouTube URL: $youtube_url"
 
 # Validate YouTube URL
 if [[ -z "$youtube_url" || ! "$youtube_url" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
@@ -29,20 +32,15 @@ fi
 # Stop any existing mpvpaper instances
 pkill -f mpvpaper >/dev/null 2>&1 || echo "No existing mpvpaper instances running."
 
-# Stream YouTube video as wallpaper (Video only)
-echo "Starting video wallpaper..."
-mpvpaper '*' "$youtube_url" -o "no-audio --loop --hwdec=no --ytdl-format=bestvideo[height<=2160]" &
-
-# Wait a few seconds for the video to load
-sleep 5
+# Start video wallpaper at 30 seconds
+echo "Starting video wallpaper at 30 seconds..."
+yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=2160]" "$youtube_url" | \
+    mpvpaper '*' - --start=30 &
 
 # Extract a screenshot for color generation
 echo "Capturing a frame for color generation..."
 yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=2160]" "$youtube_url" | \
-    ffmpeg -hide_banner -loglevel error -y -i pipe:0 -frames:v 1 -q:v 2 "$screenshot_path" &
-
-# Wait for ffmpeg to finish
-wait $!
+    ffmpeg -hide_banner -loglevel error -y -i pipe:0 -ss 00:00:30 -frames:v 1 -q:v 2 "$screenshot_path"
 
 # Check if the screenshot was saved
 if [ -f "$screenshot_path" ]; then

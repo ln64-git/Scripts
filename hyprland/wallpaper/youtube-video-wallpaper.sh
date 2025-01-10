@@ -34,13 +34,14 @@ pkill -f mpvpaper >/dev/null 2>&1 || echo "No existing mpvpaper instances runnin
 
 # Start video wallpaper at 30 seconds
 echo "Starting video wallpaper at 30 seconds..."
-yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=2160]" "$youtube_url" | \
-    mpvpaper '*' - --start=30 &
+yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=1440][fps<=60]" "$youtube_url" | \
+    ffmpeg -hide_banner -loglevel error -hwaccel vaapi -ss 30 -i pipe:0 -vf "scale=2560:1440,format=yuv420p" -c:v libx264 -preset ultrafast -f matroska pipe:1 | \
+    mpvpaper '*' - --vo=vaapi &
 
 # Extract a screenshot for color generation
 echo "Capturing a frame for color generation..."
-yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=2160]" "$youtube_url" | \
-    ffmpeg -hide_banner -loglevel error -y -i pipe:0 -ss 00:00:30 -frames:v 1 -q:v 2 "$screenshot_path"
+yt-dlp --quiet --no-warnings --output - --format "bestvideo[height<=1440][fps<=60]" "$youtube_url" | \
+    ffmpeg -hide_banner -loglevel error -hwaccel vaapi -y -i pipe:0 -ss 00:00:30 -vf "scale=2560:1440,format=yuv420p" -frames:v 1 -q:v 2 "$screenshot_path"
 
 # Check if the screenshot was saved
 if [ -f "$screenshot_path" ]; then

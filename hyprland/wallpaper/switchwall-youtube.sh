@@ -1,110 +1,139 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 ################################################################################
-# youtube-video-wallpaper.sh
+# switchwall‐youtube.sh (fast start, < 5 s to wallpaper)
 #
-# 1) Grabs a direct “bestvideo[height<=1440][fps<=60][vcodec=h264]” URL via yt-dlp.
-# 2) Starts mpvpaper at 1m30s using that URL (mpv does its own buffering & decoding).
-# 3) Uses FFmpeg on the same URL to grab one frame at 1m30s for color‐generation.
-# 4) Feeds that JPEG into your colorgen.sh, showing any output/errors.
+# 1) Pick “closest to 2560×1440” format via yt‐dlp -F.
+# 2) Immediately start mpvpaper on the HLS stream URL at 00:01:30.
+# 3) In the background: ffmpeg -ss 90 -i "$STREAM_URL" -frames:v 1 → /tmp/…png.
+# 4) Once the PNG exists, run colorgen.sh on it.
 ################################################################################
 
-# (A) Config / paths
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-CONFIG_DIR="$XDG_CONFIG_HOME/ags"
-screenshot_path="/tmp/video_wallpaper_screenshot.jpg"
+CONFIG_DIR="$XDG_CONFIG_HOME/ags/scripts/color_generation"
+SCREENSHOT_PATH="/tmp/video_wallpaper_frame.png"
 
-# (B) Check prerequisites
+# ─── (0) Check prerequisites ───────────────────────────────────────────────────
 for cmd in mpvpaper yt-dlp ffmpeg wl-paste; do
-    if ! command -v "$cmd" &> /dev/null; then
-        echo "Error: $cmd is not installed. Please install it:"
-        echo "    → sudo pacman -S ${cmd}   # (or your distro’s package manager)"
-        exit 1
-    fi
-done
-
-# (C) Pull YouTube URL from clipboard
-youtube_url=$(wl-paste --no-newline 2>/dev/null)
-echo "YouTube URL: $youtube_url"
-if [[ -z "$youtube_url" || ! "$youtube_url" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
-    echo "Error: Clipboard does not contain a valid YouTube URL."
-    exit 1
-fi
-
-# (D) Fetch a direct H.264 stream link at ≤1440p/60fps
-echo "Trying to fetch an H.264 stream URL (≤1440p, ≤60 fps)…"
-stream_url=$(
-  yt-dlp -g --format "bestvideo[height<=1440][fps<=60][vcodec=h264]" \
-    "$youtube_url" 2>/dev/null
-)
-
-if [[ -z "$stream_url" ]]; then
-  echo "…no H.264 track found. Falling back to bestvideo (any codec) at ≤1440p/60fps."
-  stream_url=$(
-    yt-dlp -g --format "bestvideo[height<=1440][fps<=60]" \
-      "$youtube_url" 2>/dev/null
-  )
-  if [[ -z "$stream_url" ]]; then
-    echo "Error: Could not extract any suitable video stream via yt-dlp."
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "Error: '$cmd' not found. Install with: sudo pacman -S $cmd" >&2
     exit 1
   fi
+done
+
+# ─── (1) Read YouTube URL from clipboard ────────────────────────────────────────
+YOUTUBE_URL=$(wl-paste --no-newline 2>/dev/null || true)
+if [[ -z "$YOUTUBE_URL" || ! "$YOUTUBE_URL" =~ ^https?://(www\.)?(youtube\.com|youtu\.be)/ ]]; then
+  echo "Error: Clipboard does not contain a valid YouTube URL." >&2
+  exit 1
+fi
+echo "YouTube URL: $YOUTUBE_URL"
+
+# ─── (2) List all formats and pick the one closest to 2560×1440 ─────────────────
+ALL_FORMATS=$(yt-dlp -F "$YOUTUBE_URL" 2>&1)
+
+BEST_CODE=""
+BEST_WIDTH=0
+BEST_HEIGHT=0
+BEST_DIST=999999
+
+TARGET_W=2560
+TARGET_H=1440
+
+while read -r LINE; do
+  [[ "$LINE" =~ audio\ only ]] && continue
+
+  # (a) explicit “WIDTHxHEIGHT”
+  if [[ "$LINE" =~ ^[[:space:]]*([0-9]+)[[:space:]]+.*([0-9]{2,4}x[0-9]{2,4}).* ]]; then
+    CODE="${BASH_REMATCH[1]}"
+    RES="${BASH_REMATCH[2]}"
+    W="${RES%x*}"
+    H="${RES#*x}"
+
+  # (b) else match “<number>p” and infer 16:9
+  elif [[ "$LINE" =~ ^[[:space:]]*([0-9]+)[[:space:]]+.*[[:space:]]([0-9]{3,4})p[[:space:]] ]]; then
+    CODE="${BASH_REMATCH[1]}"
+    H="${BASH_REMATCH[2]}"
+    W=$(( (H * 16 + 8) / 9 ))
+  else
+    continue
+  fi
+
+  # distance = |W−2560| + |H−1440|
+  DX=$(( W>TARGET_W ? W-TARGET_W : TARGET_W-W ))
+  DY=$(( H>TARGET_H ? H-TARGET_H : TARGET_H-H ))
+  D=$(( DX + DY ))
+
+  if (( D < BEST_DIST )); then
+    BEST_DIST=$D
+    BEST_WIDTH=$W
+    BEST_HEIGHT=$H
+    BEST_CODE=$CODE
+  fi
+done < <(printf '%s\n' "$ALL_FORMATS")
+
+if [[ -z "$BEST_CODE" ]]; then
+  echo "Error: Could not find any video‐only format." >&2
+  exit 1
 fi
 
-echo "Stream URL obtained →"
-echo "    $stream_url"
+echo "→ Chosen format code $BEST_CODE at ${BEST_WIDTH}×${BEST_HEIGHT} (Δ=${BEST_DIST})"
 
-# (E) Kill any existing mpvpaper tied to this URL
-pkill -f "mpvpaper .*${youtube_url}" >/dev/null 2>&1 || true
-echo "Stopped any existing mpvpaper instances for this URL."
-
-# (F) Start mpvpaper at 1m30s (mpv handles buffering/decoding).
-#     Redirect all mpvpaper output to /dev/null so you don’t see “undefined”.
-echo "Starting mpvpaper at 00:01:30 (looping, no audio)…"
-mpvpaper '*' "$stream_url" -- --no-audio --start=90 --loop \
-  >/dev/null 2>&1 &
-mpvpid=$!
-echo "mpvpaper launched (PID $mpvpid)."
-
-# (G) Meanwhile, grab a single frame at 1m30s for color‐generation
-echo "Capturing a frame at 00:01:30 for color generation…"
-ffmpeg -hide_banner -loglevel error \
-       -ss 90 \
-       -i "$stream_url" \
-       -vf "scale=2560:1440,format=yuv420p" \
-       -frames:v 1 \
-       -q:v 2 \
-       "$screenshot_path"
-ffmpeg_exit=$?
-
-if [[ $ffmpeg_exit -ne 0 ]]; then
-    echo "Error: FFmpeg exited with code $ffmpeg_exit. Could not grab screenshot."
-    exit 1
+# ─── (3) Get the direct stream URL ──────────────────────────────────────────────
+STREAM_URL=$(yt-dlp -g -f "$BEST_CODE" "$YOUTUBE_URL" 2>/dev/null)
+if [[ -z "$STREAM_URL" ]]; then
+  echo "Error: Failed to get stream URL for format $BEST_CODE." >&2
+  exit 1
 fi
+echo "Stream URL → $STREAM_URL"
 
-if [[ ! -f "$screenshot_path" ]]; then
-    echo "Error: FFmpeg claimed success but $screenshot_path does not exist."
-    exit 1
-fi
+# ─── (4) Kill any existing mpvpaper for this URL ────────────────────────────────
+pkill -f "mpvpaper .*${YOUTUBE_URL}" &>/dev/null || true
 
-echo "Screenshot saved → $screenshot_path"
-echo "File info: $(file --brief "$screenshot_path")"
+# ─── (5) Start mpvpaper immediately (looped at 00:01:30, no audio, hwdec) ──────
+echo "Starting mpvpaper at 00:01:30 (hwdec=auto, loop, no audio)…"
+mpvpaper '*' "$STREAM_URL" -- \
+  --no-audio \
+  --hwdec=auto \
+  --start=90 \
+  --loop \
+  &>/dev/null &
+echo "mpvpaper launched."
 
-# (H) Feed that screenshot into colorgen.sh (showing any output/errors)
-echo "Applying colors from screenshot…"
-"$CONFIG_DIR/scripts/color_generation/colorgen.sh" "$screenshot_path" --apply
-colorgen_exit=$?
+# ─── (6) In background: grab one frame at 00:01:30 via ffmpeg ──────────────────
+(
+  echo "🔹 [bg] Capturing frame at 00:01:30…"
 
-if [[ $colorgen_exit -eq 0 ]]; then
-    echo "✅ colorgen.sh finished successfully."
-else
-    echo "❌ colorgen.sh failed (exit code $colorgen_exit)."
-    echo "— Here is any output it produced:"
-    echo "--------------------------------------------------"
-    "$CONFIG_DIR/scripts/color_generation/colorgen.sh" "$screenshot_path" --apply
-    echo "--------------------------------------------------"
-    exit 1
-fi
+  # Remove any old screenshot
+  rm -f "$SCREENSHOT_PATH"
 
-# (I) Clean up
-rm -f "$screenshot_path"
-echo "Wallpaper + color‐generation complete."
+  # Because -ss is *before* -i, ffmpeg will jump straight to ~90s on HLS.
+  ffmpeg -hide_banner -loglevel error \
+    -ss 90 \
+    -i "$STREAM_URL" \
+    -vf "scale=2560:1440:force_original_aspect_ratio=decrease,format=yuv420p" \
+    -frames:v 1 \
+    -q:v 2 \
+    "$SCREENSHOT_PATH"
+
+  if [[ -f "$SCREENSHOT_PATH" ]]; then
+    echo "🔹 [bg] Screenshot saved → $SCREENSHOT_PATH"
+    echo "🔹 [bg] Running colorgen.sh…"
+    if "$CONFIG_DIR/colorgen.sh" "$SCREENSHOT_PATH" --apply --smart; then
+      echo "🔹 [bg] colorgen.sh succeeded."
+    else
+      echo "🔹 [bg] colorgen.sh failed, re-running for debug:" >&2
+      echo "────────────────────────────────────────────────"
+      "$CONFIG_DIR/colorgen.sh" "$SCREENSHOT_PATH" --apply --smart
+      echo "────────────────────────────────────────────────"
+    fi
+    rm -f "$SCREENSHOT_PATH"
+  else
+    echo "🔹 [bg] Error: could not write screenshot." >&2
+  fi
+) &
+
+# ─── (7) Return immediately ────────────────────────────────────────────────────
+echo "Wallpaper up! colorgen will run once frame is ready."
+exit 0

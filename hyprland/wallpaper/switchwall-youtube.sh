@@ -97,7 +97,7 @@ mpvpaper '*' "$STREAM_URL" -- \
   --no-audio \
   --hwdec=auto \
   --start=90 \
-  --loop \
+  --loop=inf \
   &>/dev/null &
 echo "mpvpaper launched."
 
